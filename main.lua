@@ -1,81 +1,74 @@
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
-local hitboxSize = 1
-local hitboxEnabled = false
-local hitboxVisual = false
-local Players = game:GetService("Players")
-local enabled = false
-local espColor = Color3.fromRGB(0, 255, 0)
-local connections = {}
+local AimSettings = {
+    Enabled = false,
+    FovEnabled = false,
+    FovRadius = 100,
+    FovColor = Color3.fromRGB(0, 255, 0),
+    Smoothness = 1,
+    TeamCheck = false,
+    WallCheck = false,
+    TargetPart = "Head"
+}
 
-local function updateHitbox(player)
-    if player == Players.LocalPlayer then return end
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    
-    if hrp then
-        if hitboxEnabled then
-            hrp.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
-            hrp.CanCollide = false
-            if hitboxVisual then
-                hrp.Transparency = 0.7
-                hrp.Material = Enum.Material.Neon
-                hrp.BrickColor = BrickColor.new("Really red")
-            else
-                hrp.Transparency = 1
-                hrp.Material = Enum.Material.Plastic
-            end
-        else
-            hrp.Size = Vector3.new(2, 2, 1)
-            hrp.Transparency = 1
-        end
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1
+FOVCircle.NumSides = 100
+FOVCircle.Filled = false
+FOVCircle.Transparency = 1
+FOVCircle.Visible = false
+
+local function GetBodyPart(character)
+    local partName = AimSettings.TargetPart
+    if partName == "Torso" then
+        return character:FindFirstChild("UpperTorso") or character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
+    elseif partName == "Legs" then
+        return character:FindFirstChild("LeftLowerLeg") or character:FindFirstChild("RightLowerLeg") or character:FindFirstChild("LeftLeg")
     end
+    return character:FindFirstChild("Head")
 end
 
-RunService.RenderStepped:Connect(function()
-    if hitboxEnabled then
-        for _, p in ipairs(Players:GetPlayers()) do
-            updateHitbox(p)
-        end
-    end
-end)
+local function IsVisible(part)
+    if not AimSettings.WallCheck then return true end
+    local char = LocalPlayer.Character
+    if not char then return false end
+    
+    local ray = Ray.new(Camera.CFrame.Position, (part.Position - Camera.CFrame.Position).Unit * 1000)
+    local hit = workspace:FindPartOnRayWithIgnoreList(ray, {char, part.Parent})
+    return hit == nil
+end
 
-local function applyEsp(player)
-    if player == Players.LocalPlayer then return end
-    
-    local function setup(char)
-        if not char then return end
-        
-        local hl = char:FindFirstChild("esp_hl")
-        if not hl then
-            hl = Instance.new("Highlight")
-            hl.Name = "esp_hl"
-            hl.Parent = char
-        end
-        
-        if enabled then
-            hl.FillColor = espColor
-            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-            hl.FillTransparency = 0.5
-            hl.OutlineTransparency = 0
-            hl.Adornee = char
-            hl.Enabled = true
-        else
-            hl.Enabled = false
+local function GetClosestToMouse()
+    local target = nil
+    local dist = AimSettings.FovRadius
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and (not AimSettings.TeamCheck or player.Team ~= LocalPlayer.Team) then
+            local part = GetBodyPart(player.Character)
+            if part then
+                local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                if onScreen then
+                    local mouseDistance = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                    if mouseDistance < dist and IsVisible(part) then
+                        dist = mouseDistance
+                        target = part
+                    end
+                end
+            end
         end
     end
-    
-    if connections[player] then connections[player]:Disconnect() end
-    connections[player] = player.CharacterAdded:Connect(setup)
-    
-    if player.Character then setup(player.Character) end
+    return target
 end
 
 local Window = WindUI:CreateWindow({
     Title = "DarkDev",
-    Icon = "ghost",
+    Icon = "moon",
     Author = "by WoxverUA",
     Folder = "DarkDev",
     
@@ -89,44 +82,64 @@ local Window = WindUI:CreateWindow({
     BackgroundImageTransparency = 0.42,
     HideSearchBar = true,
     ScrollBarEnabled = false,
-     
+    
     User = {
         Enabled = true,
         Anonymous = false,
         Callback = function()
-            print("clicked")
+            
         end,
     },
     
     KeySystem = { 
-        Key = { "1234" },
+        Key = { "DarkDev-2026" },
         
         Note = "DarkDev Key System",
         
-        URL = "1234",
+        URL = "https://discord.gg/uwDS6njya",
         
         SaveKey = true,
     },
 })
 
+Window:Tag({
+    Title = "v1.0.0",
+    Icon = "circle-check",
+    Color = Color3.fromHex("#30ff6a"),
+    Radius = 13,
+})
+
 Window:EditOpenButton({
-    Title = "Open DarkDev",
-    Icon = "ghost",
+    Title = "Open UI",
+    Icon = "moon",
     CornerRadius = UDim.new(0,16),
     StrokeThickness = 2,
     Color = ColorSequence.new(
-        Color3.fromHex("#780000"), 
-        Color3.fromHex("#450000")
+        Color3.fromHex("#290063"), 
+        Color3.fromHex("#170038")
     ),
     OnlyMobile = false,
     Enabled = true,
     Draggable = true,
 })
 
+local InfoTab = Window:Tab({
+    Title = "Info",
+    Icon = "info",
+    Locked = false,
+})
+
+Window:Divider()
 
 local MainTab = Window:Tab({
     Title = "Main",
     Icon = "house",
+    Locked = false,
+})
+
+local CombatTab = Window:Tab({
+    Title = "Combat",
+    Icon = "crosshair",
     Locked = false,
 })
 
@@ -136,105 +149,109 @@ local VisualsTab = Window:Tab({
     Locked = false,
 })
 
-local HitboxSection = MainTab:Section({ 
-    Title = "Hitbox",
-    Icon = "box",
+local PlayerTab = Window:Tab({
+    Title = "Player",
+    Icon = "user",
+    Locked = false,
 })
 
-local EspSection = VisualsTab:Section({ 
-    Title = "Esp",
-    Icon = "eye",
+Window:Divider()
+
+local SettingsTab = Window:Tab({
+    Title = "Settings",
+    Icon = "settings",
+    Locked = false,
 })
 
-local HitboxSizeSlider = HitboxSection:Slider({
-    Title = "Hitbox Size",
-    Description = "Set the hitbox size",
-    Step = 1,
-    Value = {Min = 1, Max = 100, Default = 1},
-    Callback = function(value)
-        hitboxSize = value
-    end
-})
-
-HitboxSection:Divider()
-
-local EnableHitboxToggle = HitboxSection:Toggle({
-    Title = "Enable Hitbox",
-    Value = false,
-    Callback = function(state) 
-        hitboxEnabled = state
-        if not state then
-            for _, p in ipairs(Players:GetPlayers()) do updateHitbox(p) end
-        end
-    end
-})
-
-local EspColorpicker = EspSection:Colorpicker({
-    Title = "Esp Color",
-    Description = "Select color of Esp",
-    Default = espColor,
+local FovColorpicker = CombatTab:Colorpicker({
+    Title = "Fov Color",
+    Default = Color3.fromRGB(0, 255, 0),
     Callback = function(color) 
-        espColor = color
-        
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("esp_hl") then
-                p.Character.esp_hl.FillColor = color
-            end
-        end
+        AimSettings.FovColor = color
+        FOVCircle.Color = color
     end
 })
 
-EspSection:Divider()
+local FovSizeSlider = CombatTab:Slider({
+    Title = "Fov Size",
+    Step = 1,
+    Value = {Min = 10, Max = 500, Default = 100},
+    Callback = function(value)
+        AimSettings.FovRadius = value
+        FOVCircle.Radius = value
+    end
+})
 
-local PlayersEspToggle = EspSection:Toggle({
-    Title = "Players Esp",
+local FovToggle = CombatTab:Toggle({
+    Title = "Fov",
     Value = false,
     Callback = function(state) 
-        enabled = state
-        
-        if enabled then
-            for _, p in ipairs(Players:GetPlayers()) do
-                applyEsp(p)
-            end
-            connections["PlayerAdded"] = Players.PlayerAdded:Connect(applyEsp)
-        else
-            if connections["PlayerAdded"] then
-                connections["PlayerAdded"]:Disconnect()
-                connections["PlayerAdded"] = nil
-            end
+        AimSettings.FovEnabled = state
+        FOVCircle.Visible = state
+    end
+})
+
+CombatTab:Divider()
+
+local AimbotToggle = CombatTab:Toggle({
+    Title = "Aimbot",
+    Value = false,
+    Callback = function(state) 
+        AimSettings.Enabled = state
+    end
+})
+
+local WallCheckToggle = CombatTab:Toggle({
+    Title = "WallCheck",
+    Value = false,
+    Callback = function(state) 
+        AimSettings.WallCheck = state
+    end
+})
+
+local TeamCheckToggle = CombatTab:Toggle({
+    Title = "Team Check",
+    Value = false,
+    Callback = function(state) 
+        AimSettings.TeamCheck = state
+    end
+})
+
+local AimbotPartDropdown = CombatTab:Dropdown({
+    Title = "Aiming Part",
+    Values = { "Head", "Torso", "Legs" },
+    Value = "Head",
+    Callback = function(option) 
+        AimSettings.TargetPart = option
+    end
+})
+
+local AimbotSmoothnessSlider = CombatTab:Slider({
+    Title = "Smoothness",
+    Step = 0.01,
+    Value = {Min = 0.01, Max = 1, Default = 1},
+    Callback = function(value)
+        AimSettings.Smoothness = value
+    end
+})
+
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Position = UserInputService:GetMouseLocation()
+    
+    if AimSettings.Enabled then
+        local target = GetClosestToMouse()
+        if target then
+            local targetPos = Camera:WorldToViewportPoint(target.Position)
+            local mousePos = UserInputService:GetMouseLocation()
             
-            for _, p in ipairs(Players:GetPlayers()) do
-                if connections[p] then 
-                    connections[p]:Disconnect() 
-                    connections[p] = nil 
-                end
-                if p.Character and p.Character:FindFirstChild("esp_hl") then
-                    p.Character.esp_hl:Destroy()
-                end
+            local moveX = (targetPos.X - mousePos.X) * AimSettings.Smoothness
+            local moveY = (targetPos.Y - mousePos.Y) * AimSettings.Smoothness
+            
+            if mouse_event then
+                mouse_event(0x0001, moveX, moveY, 0, 0)
+            else
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
             end
         end
     end
-})
-
-local HitboxEspToggle = EspSection:Toggle({
-    Title = "Hitbox Esp",
-    Value = false,
-    Callback = function(state) 
-        hitboxVisual = state
-        
-        if hitboxEnabled then
-            for _, p in ipairs(Players:GetPlayers()) do
-                local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    if state then
-                        hrp.Transparency = 0.7
-                        hrp.Material = Enum.Material.Neon
-                    else
-                        hrp.Transparency = 1
-                        hrp.Material = Enum.Material.Plastic
-                    end
-                end
-            end
-        end
-    end
-})
+end)
