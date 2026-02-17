@@ -62,9 +62,12 @@ end
 
 local function CleanUp()
     local char = game.Players.LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local bv = char.HumanoidRootPart:FindFirstChild("DarkVelocity")
-        if bv then bv:Destroy() end
+    if char then
+        for _, v in pairs(char:GetDescendants()) do
+            if v:IsA("BodyVelocity") or v:IsA("BodyGyro") or v.Name == "DarkVelocity" then
+                v:Destroy()
+            end
+        end
     end
 end
 
@@ -116,11 +119,15 @@ MainGroup:AddToggle("AutoFarm", {
     Callback = function(Value)
         autoFarmEnabled = Value
         if not Value then 
-            CleanUp()
+            autoFarmEnabled = false
+            CleanUp() 
         end
+        
         task.spawn(function()
             while autoFarmEnabled do
-                task.wait(0.1)
+                if not autoFarmEnabled then CleanUp() break end
+                
+                task.wait(0.05)
                 pcall(function()
                     CheckQuest()
                     local char = game.Players.LocalPlayer.Character
@@ -148,6 +155,9 @@ MainGroup:AddToggle("AutoFarm", {
 
                         if target and target:FindFirstChild("HumanoidRootPart") then
                             local tPos = target.HumanoidRootPart.Position
+                            
+                            if not autoFarmEnabled then CleanUp() return end 
+                            
                             hrp.CFrame = CFrame.new(tPos.X, tPos.Y + 45, tPos.Z)
                             
                             local bv = hrp:FindFirstChild("DarkVelocity") or Instance.new("BodyVelocity")
@@ -164,6 +174,7 @@ MainGroup:AddToggle("AutoFarm", {
                     end
                 end)
             end
+            CleanUp()
         end)
     end
 })
