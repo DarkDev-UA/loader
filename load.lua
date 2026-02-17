@@ -62,12 +62,17 @@ end
 
 local function CleanUp()
     local char = game.Players.LocalPlayer.Character
-    if char then
-        for _, v in pairs(char:GetDescendants()) do
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local hrp = char.HumanoidRootPart
+        for _, v in pairs(hrp:GetChildren()) do
             if v:IsA("BodyVelocity") or v:IsA("BodyGyro") or v.Name == "DarkVelocity" then
                 v:Destroy()
             end
         end
+        hrp.Velocity = Vector3.new(0,0,0)
+        hrp.RotVelocity = Vector3.new(0,0,0)
+        local ts = game:GetService("TweenService")
+        pcall(function() ts:Create(hrp, TweenInfo.new(0), {CFrame = hrp.CFrame}):Play() end)
     end
 end
 
@@ -119,27 +124,24 @@ MainGroup:AddToggle("AutoFarm", {
     Callback = function(Value)
         autoFarmEnabled = Value
         if not Value then 
-            autoFarmEnabled = false
+            autoFarmEnabled = false 
             CleanUp() 
+            return
         end
         
         task.spawn(function()
             while autoFarmEnabled do
-                if not autoFarmEnabled then CleanUp() break end
+                if not autoFarmEnabled then break end
                 
-                task.wait(0.05)
+                task.wait(0.1)
                 pcall(function()
                     CheckQuest()
                     local char = game.Players.LocalPlayer.Character
-                    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-                    local hrp = char.HumanoidRootPart
+                    local hrp = char:FindFirstChild("HumanoidRootPart")
+                    if not hrp then return end
+                    
                     local questVisible = game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible
                     
-                    if not char:FindFirstChildOfClass("Tool") then
-                        local tool = game.Players.LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
-                        if tool then char.Humanoid:EquipTool(tool) end
-                    end
-
                     if autoQuestEnabled and not questVisible then
                         CleanUp()
                         TP(CQ)
@@ -154,10 +156,9 @@ MainGroup:AddToggle("AutoFarm", {
                         end
 
                         if target and target:FindFirstChild("HumanoidRootPart") then
+                            if not autoFarmEnabled then CleanUp() return end
+                            
                             local tPos = target.HumanoidRootPart.Position
-                            
-                            if not autoFarmEnabled then CleanUp() return end 
-                            
                             hrp.CFrame = CFrame.new(tPos.X, tPos.Y + 45, tPos.Z)
                             
                             local bv = hrp:FindFirstChild("DarkVelocity") or Instance.new("BodyVelocity")
