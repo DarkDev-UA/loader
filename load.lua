@@ -4,7 +4,7 @@ local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local autoFarmEnabled = false
 local autoQuestEnabled = false
 local Ms, NM, NQ, LQ, CQ
-local BannedUsers = {}
+local BannedUsers = {10500256022}
 
 local ErrorTable = {
     [111] = "Welcome, loaded successfully.",
