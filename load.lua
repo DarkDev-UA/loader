@@ -61,9 +61,10 @@ local function CheckQuest()
 end
 
 local function CleanUp()
-    local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp and hrp:FindFirstChild("DarkVelocity") then
-        hrp.DarkVelocity:Destroy()
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local bv = char.HumanoidRootPart:FindFirstChild("DarkVelocity")
+        if bv then bv:Destroy() end
     end
 end
 
@@ -102,7 +103,7 @@ end
 
 local Window = Library:CreateWindow({
     Title = "DarkDev | Hub",
-    Footer = "Build: v1.0.2 | Game: Blox Fruits",
+    Footer = "Build: v1.0.3 | Game: Blox Fruit",
     NotifySide = "Right",
 })
 
@@ -114,14 +115,17 @@ MainGroup:AddToggle("AutoFarm", {
     Default = false,
     Callback = function(Value)
         autoFarmEnabled = Value
-        if not Value then CleanUp() end
+        if not Value then 
+            CleanUp()
+        end
         task.spawn(function()
             while autoFarmEnabled do
                 task.wait(0.1)
                 pcall(function()
                     CheckQuest()
                     local char = game.Players.LocalPlayer.Character
-                    local hrp = char:FindFirstChild("HumanoidRootPart")
+                    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                    local hrp = char.HumanoidRootPart
                     local questVisible = game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible
                     
                     if not char:FindFirstChildOfClass("Tool") then
@@ -152,7 +156,6 @@ MainGroup:AddToggle("AutoFarm", {
                             bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
                             bv.Parent = hrp
                             
-                            target.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
                             FastAttack(target)
                         else
                             CleanUp()
@@ -166,7 +169,7 @@ MainGroup:AddToggle("AutoFarm", {
 })
 
 MainGroup:AddToggle("AutoQuest", {
-    Text = "Auto Quest",
+    Text = "Auto Take Quest",
     Default = false,
     Callback = function(Value)
         autoQuestEnabled = Value
