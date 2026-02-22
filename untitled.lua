@@ -6,12 +6,13 @@ local Window = Rayfield:CreateWindow({
    LoadingTitle = "DarkDev Community",
    LoadingSubtitle = "by WoxverUA",
    ShowText = "Open UI",
+   ShowCustomConnection = true,
    Theme = "DarkBlue",
 
    ToggleUIKeybind = "K",
 
    DisableRayfieldPrompts = false,
-   DisableBuildWarnings = false
+   DisableBuildWarnings = false,
 
    ConfigurationSaving = {
       Enabled = true,
@@ -37,10 +38,10 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
-local Tabs = ({
+local Tabs = {
   InfoTab = Window:CreateTab("Info", "info"),
   MainTab = Window:CreateTab("Main", "house"),
   VisualsTab = Window:CreateTab("Visuals", "scan-eye")
-})
+}
 
 Rayfield:LoadConfiguration()
