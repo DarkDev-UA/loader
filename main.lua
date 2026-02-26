@@ -1,7 +1,4 @@
--- Blox Fruits Auto Farm | WindUI
--- Переписан на основе оригинального скрипта с правильными механиками
-
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/raw/main/source.lua"))()
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local Window = WindUI:CreateWindow({
     Title = "Blox Fruits Farm",
